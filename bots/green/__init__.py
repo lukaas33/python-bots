@@ -9,7 +9,7 @@ from . import sentence
 import praw
 import bmemcached
 
-import math
+import re
 import string
 import time
 import os
@@ -22,13 +22,13 @@ def main():
 
 
     gens = {
-        "John": sentence.sentences('john-green', math.inf),
-        "Hank": sentence.sentences('hank-green', math.inf)
+    "John": sentence.gen('john-green'),
+    "Hank": sentence.gen('hank-green')
     }
 
     template = string.Template('''
     > $text
-    - $name
+    -- $name
 
     I am a bot. This sentence is randomly generated and based on Vlogbrothers transcripts.
     For more info or comments [email me](mailto:lukaas9000@gmail.com).
@@ -74,21 +74,22 @@ def main():
         cache.replace('replied', '-'.join(replied))
 
     # Replies
-    def reply(target, comment):
+    def reply(target, comment, start):
         try:
-            line = next(gens[target])
+            line = sentence.sentence(gens[target], start)
 
-            print('Comment:', comment.body.lower())
             print('Reply:', line)
 
-            re = comment.reply(template.substitute(name=target + 'Green', text=line))
+            if line:
+                rep = comment.reply(template.substitute(name=target + ' Green', text=line))
+                store(rep.id)  # Don't reply to self
 
-            store(re.id)  # Don't reply to self
             store(comment.id)
+
         except praw.exceptions.APIException as err:
             print('Error:', err)
             time.sleep(60 * 5)  # Wait until ratelimit ended
-            reply(target, comment)
+            reply(target, comment, start)
         except Exception as err:
             print(err)
             time.sleep(60 * 10)
@@ -100,13 +101,25 @@ def main():
 
         # Checks all comments
         for comment in reddit.subreddit('nerdfighters').stream.comments():
-            text = comment.body.lower()
-
             if comment.id not in replied:
+                print('Comment:', comment.body)
+                text = comment.body.lower()
+                target = None
+
                 if "random john" in text:
-                    reply('John', comment)
+                    target = 'John'
                 if "random hank" in text:
-                    reply('Hank', comment)
+                    target = 'Hank'
+
+                if target:
+                    parts = text.split(target.lower())
+                    parts = parts[1].strip().split(' ')
+                    if parts[0]:
+                        start = re.sub(r'\W+', '', parts[0])  # Only alphanumerical
+                        start = start.title()
+                    else:
+                        start = None
+
 
 
     try:
