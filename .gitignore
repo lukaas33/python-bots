@@ -1,3 +1,4 @@
 .ropeproject
 .env
 *__pycache__
+Pipfile.lock

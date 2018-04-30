@@ -4,6 +4,7 @@ django = "*"
 gunicorn = "*"
 django-heroku = "*"
 praw = "*"
+markovify = "*"
 
 
 [requires]

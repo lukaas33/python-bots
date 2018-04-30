@@ -17,41 +17,6 @@ import os
 
 # Main functionality
 def main():
-    # >> Vars
-    cache = bmemcached.Client(os.environ.get('MEMCACHEDCLOUD_SERVERS').split(','), os.environ.get('MEMCACHEDCLOUD_USERNAME'), os.environ.get('MEMCACHEDCLOUD_PASSWORD'))
-
-
-    gens = {
-    "John": sentence.gen('john-green'),
-    "Hank": sentence.gen('hank-green')
-    }
-
-    template = string.Template('''
-    > $text
-    -- $name
-
-    I am a bot. This sentence is randomly generated and based on Vlogbrothers transcripts.
-    For more info or comments [email me](mailto:lukaas9000@gmail.com).
-    ''')
-
-    # Get past replies on restart
-    init = set()
-
-    with open("C:\\Users\\Lucas\\Documents\\Git\\python-bots\\bots\\green\\replied.txt", 'r', encoding='utf-8') as file:
-        for id in file.read().split('\n'):
-            if id:  # Not empty
-                init.add(id)
-
-    cache.set('replied', '-'.join(init))
-
-    data = cache.get('replied')
-    if data:
-        replied = set(data.split('-'))
-    else:
-        replied = set()
-    print(replied)
-
-
     # >> Functions
     # Login
     def authenticate():
@@ -78,7 +43,7 @@ def main():
         try:
             line = sentence.sentence(gens[target], start)
 
-            print('Reply:', line)
+            print('Reply:', repr(line))
 
             if line:
                 rep = comment.reply(template.substitute(name=target + ' Green', text=line))
@@ -102,7 +67,7 @@ def main():
         # Checks all comments
         for comment in reddit.subreddit('nerdfighters').stream.comments():
             if comment.id not in replied:
-                print('Comment:', comment.body)
+                print('Comment:', repr(comment.body))
                 text = comment.body.lower()
                 target = None
 
@@ -121,7 +86,33 @@ def main():
                         start = None
 
 
+    # >> Vars
+    cache = bmemcached.Client(os.environ.get('MEMCACHEDCLOUD_SERVERS').split(','), os.environ.get('MEMCACHEDCLOUD_USERNAME'), os.environ.get('MEMCACHEDCLOUD_PASSWORD'))
 
+
+    gens = {
+    "John": sentence.gen('john-green'),
+    "Hank": sentence.gen('hank-green')
+    }
+
+    template = string.Template('''
+    > $text
+    -- $name
+
+    I am a bot. This sentence is randomly generated and based on Vlogbrothers transcripts.
+    For more info or comments [email me](mailto:lukaas9000@gmail.com).
+    ''')
+
+    # Get past replies on restart
+    data = cache.get('replied')
+    if data:
+        replied = set(data.split('-'))
+    else:
+        replied = set()
+    print(replied)
+
+
+    # >>> Execute
     try:
         # Bot runs
         print("Logging in")
@@ -134,7 +125,6 @@ def main():
 
 
 
-# >> Execute
 # Run straight from command line
 if __name__ == '__main__':
     main()
