@@ -28,62 +28,66 @@ def main():
             user_agent='/r/nerdfighters, randomNerdfighter.Bot, v1.0, by /u/lukaas33',
             username='randomNerdfighterbot'
         )
-        print("Logged in")
+        print("Logged in", flush=True)
         return reddit
 
     # Store ids
     def store(id):
-        global replied
+        print(id, flush=True)
 
         replied.add(id)
-        cache.replace('replied', '-'.join(replied))
+        cache.set('replied', '-'.join(replied))
 
     # Replies
     def reply(target, comment, start):
         try:
             line = sentence.sentence(gens[target], start)
+            print('Reply:', line, flush=True)
 
-            print('Reply:', repr(line))
-
-            if line:
-                rep = comment.reply(template.substitute(name=target + ' Green', text=line))
-                store(rep.id)  # Don't reply to self
+            # if line:
+                # rep = comment.reply(template.substitute(name=target + ' Green', text=line))
+                # store(rep.id)  # Don't reply to self
 
             store(comment.id)
 
         except praw.exceptions.APIException as err:
-            print('Error:', err)
+            print('Error:', err, flush=True)
             time.sleep(60 * 5)  # Wait until ratelimit ended
             reply(target, comment, start)
+
         except Exception as err:
-            print(err)
+            print(err, flush=True)
             time.sleep(60 * 10)
             main()  # Restart after waiting
 
 
     # Run the bot
     def run_bot(reddit):
+        def find_start(text, target):
+            parts = text.lower().split(target.lower())
+            parts = parts[1].strip().split(' ')
+            if parts[0]:
+                start = re.sub(r'\W+', '', parts[0])  # Only alphanumerical
+                start = start.title()
+            else:
+                start = None
+
+            return start
 
         # Checks all comments
         for comment in reddit.subreddit('nerdfighters').stream.comments():
             if comment.id not in replied:
-                print('Comment:', repr(comment.body))
-                text = comment.body.lower()
-                target = None
+                text = str(comment.body.encode(encoding='UTF-8', errors='replace'))
+                print('Comment:', text, flush=True)
 
-                if "random john" in text:
+                if 'random john' in text.lower():
                     target = 'John'
-                if "random hank" in text:
+                    start = find_start(text, target)
+                    reply(target, comment, start)
+                if 'random hank' in text.lower():
                     target = 'Hank'
-
-                if target:
-                    parts = text.split(target.lower())
-                    parts = parts[1].strip().split(' ')
-                    if parts[0]:
-                        start = re.sub(r'\W+', '', parts[0])  # Only alphanumerical
-                        start = start.title()
-                    else:
-                        start = None
+                    start = find_start(text, target)
+                    reply(target, comment, start)
 
 
     # >> Vars
@@ -109,17 +113,17 @@ def main():
         replied = set(data.split('-'))
     else:
         replied = set()
-    print(replied)
+    print(replied, flush=True)
 
 
     # >>> Execute
     try:
         # Bot runs
-        print("Logging in")
+        print("Logging in", flush=True)
         reddit = authenticate()
         run_bot(reddit)
     except Exception as err:
-        print(err)
+        print(err, flush=True)
         time.sleep(60 * 10)
         main()  # Restart after waiting
 
