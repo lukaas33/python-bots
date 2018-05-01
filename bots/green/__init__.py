@@ -44,9 +44,9 @@ def main():
             line = sentence.sentence(gens[target], start)
             print('Reply:', line, flush=True)
 
-            # if line:
-                # rep = comment.reply(template.substitute(name=target + ' Green', text=line))
-                # store(rep.id)  # Don't reply to self
+            if line:
+                rep = comment.reply(template.substitute(name=target + ' Green', text=line))
+                store(rep.id)  # Don't reply to self
 
             store(comment.id)
 
