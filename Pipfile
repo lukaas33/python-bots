@@ -5,6 +5,7 @@ gunicorn = "*"
 django-heroku = "*"
 praw = "*"
 markovify = "*"
+python-binary-memcached = "*"
 
 
 [requires]
