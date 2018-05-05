@@ -13,6 +13,7 @@ import re
 import string
 import time
 import os
+import gc
 
 
 # Main functionality
@@ -88,6 +89,10 @@ def main():
                     target = 'Hank'
                     start = find_start(text, target)
                     reply(target, comment, start)
+
+                del comment  # Variable clear
+
+            gc.collect()
 
 
     # >> Vars
